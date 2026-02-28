@@ -12,11 +12,12 @@
 /// - PinMode::Input (0) = INPUT (GPIO_MODE_INPUT)
 /// - PinMode::Output (1) = OUTPUT (GPIO_MODE_OUTPUT)
 /// - PinMode::InputPullup (2) = INPUT_PULLUP (GPIO_MODE_INPUT with pull-up)
-/// - PinMode::InputPulldown (3) = INPUT_PULLDOWN (GPIO_MODE_INPUT with pull-down)
+/// - PinMode::InputPulldown (3) = INPUT_PULLDOWN (GPIO_MODE_INPUT with
+/// pull-down)
 
 #include "fl/compiler_control.h"
-#include "platforms/esp/is_esp.h"
 #include "platforms/esp/esp_version.h"
+#include "platforms/esp/is_esp.h"
 
 FL_EXTERN_C_BEGIN
 // IWYU pragma: begin_keep
@@ -49,7 +50,7 @@ namespace platforms {
 
 inline void pinMode(int pin, PinMode mode) {
     if (pin < 0 || pin >= GPIO_NUM_MAX) {
-        return;  // Invalid pin
+        return; // Invalid pin
     }
 
     gpio_config_t io_conf = {};
@@ -57,28 +58,28 @@ inline void pinMode(int pin, PinMode mode) {
     io_conf.intr_type = GPIO_INTR_DISABLE;
 
     switch (mode) {
-        case PinMode::Input:
-            io_conf.mode = GPIO_MODE_INPUT;
-            io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-            io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-            break;
-        case PinMode::Output:
-            io_conf.mode = GPIO_MODE_OUTPUT;
-            io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-            io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-            break;
-        case PinMode::InputPullup:
-            io_conf.mode = GPIO_MODE_INPUT;
-            io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-            io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-            break;
-        case PinMode::InputPulldown:
-            io_conf.mode = GPIO_MODE_INPUT;
-            io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-            io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
-            break;
-        default:
-            return;  // Unknown mode
+    case PinMode::Input:
+        io_conf.mode = GPIO_MODE_INPUT;
+        io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        break;
+    case PinMode::Output:
+        io_conf.mode = GPIO_MODE_OUTPUT;
+        io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        break;
+    case PinMode::InputPullup:
+        io_conf.mode = GPIO_MODE_INPUT;
+        io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        break;
+    case PinMode::InputPulldown:
+        io_conf.mode = GPIO_MODE_INPUT;
+        io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+        io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
+        break;
+    default:
+        return; // Unknown mode
     }
 
     gpio_config(&io_conf);
@@ -86,15 +87,14 @@ inline void pinMode(int pin, PinMode mode) {
 
 inline void digitalWrite(int pin, PinValue val) {
     if (pin < 0 || pin >= GPIO_NUM_MAX) {
-        return;  // Invalid pin
+        return; // Invalid pin
     }
-    gpio_set_level(static_cast<gpio_num_t>(pin),
-                   val == PinValue::High ? 1 : 0);
+    gpio_set_level(static_cast<gpio_num_t>(pin), val == PinValue::High ? 1 : 0);
 }
 
 inline PinValue digitalRead(int pin) {
     if (pin < 0 || pin >= GPIO_NUM_MAX) {
-        return PinValue::Low;  // Invalid pin
+        return PinValue::Low; // Invalid pin
     }
     int raw = gpio_get_level(static_cast<gpio_num_t>(pin));
     return raw ? PinValue::High : PinValue::Low;
@@ -107,21 +107,22 @@ inline PinValue digitalRead(int pin) {
 #if ESP_IDF_VERSION_5_OR_HIGHER
 
 namespace {
-    // ADC handle for analog reads (lazy initialization)
-    adc_oneshot_unit_handle_t adc1_handle = nullptr;
+// ADC handle for analog reads (lazy initialization)
+adc_oneshot_unit_handle_t adc1_handle = nullptr;
 
-    void initADC1() {
-        if (adc1_handle != nullptr) {
-            return;  // Already initialized
-        }
-
-        adc_oneshot_unit_init_cfg_t init_config = {
-            .unit_id = ADC_UNIT_1,
-            .ulp_mode = ADC_ULP_MODE_DISABLE,
-        };
-        adc_oneshot_new_unit(&init_config, &adc1_handle);
+void initADC1() {
+    if (adc1_handle != nullptr) {
+        return; // Already initialized
     }
+
+    adc_oneshot_unit_init_cfg_t init_config = {
+        .unit_id = ADC_UNIT_1,
+        .clk_src = ADC_RTC_CLK_SRC_DEFAULT,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
+    };
+    adc_oneshot_new_unit(&init_config, &adc1_handle);
 }
+} // namespace
 
 inline u16 analogRead(int pin) {
     // Map GPIO pin to ADC channel (ESP32-specific mapping)
@@ -130,7 +131,7 @@ inline u16 analogRead(int pin) {
     initADC1();
 
     if (adc1_handle == nullptr) {
-        return 0;  // ADC initialization failed
+        return 0; // ADC initialization failed
     }
 
     // Configure channel (simplified - assumes ADC1 channel 0)
@@ -141,7 +142,7 @@ inline u16 analogRead(int pin) {
 
     // Note: This is a stub implementation. Real implementation would need
     // proper GPIO-to-ADC channel mapping based on ESP32 variant
-    adc_channel_t channel = ADC_CHANNEL_0;  // Placeholder
+    adc_channel_t channel = ADC_CHANNEL_0; // Placeholder
     adc_oneshot_config_channel(adc1_handle, channel, &config);
 
     int raw_value = 0;
@@ -149,26 +150,26 @@ inline u16 analogRead(int pin) {
     return static_cast<u16>(raw_value);
 }
 
-#else  // ESP-IDF v4.x legacy ADC API
+#else // ESP-IDF v4.x legacy ADC API
 
 namespace {
-    bool adc1_initialized = false;
+bool adc1_initialized = false;
 
-    void initADC1() {
-        if (adc1_initialized) {
-            return;
-        }
-        adc1_config_width(ADC_WIDTH_BIT_12);
-        adc1_initialized = true;
+void initADC1() {
+    if (adc1_initialized) {
+        return;
     }
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_initialized = true;
 }
+} // namespace
 
 inline u16 analogRead(int pin) {
     initADC1();
 
     // Note: This is a stub implementation. Real implementation would need
     // proper GPIO-to-ADC channel mapping based on ESP32 variant
-    adc1_channel_t channel = ADC1_CHANNEL_0;  // Placeholder
+    adc1_channel_t channel = ADC1_CHANNEL_0; // Placeholder
     adc1_config_channel_atten(channel, ADC_ATTEN_DB_11);
 
     int raw_value = adc1_get_raw(channel);
@@ -178,7 +179,7 @@ inline u16 analogRead(int pin) {
     return static_cast<u16>(raw_value);
 }
 
-#endif  // ESP_IDF_VERSION_5_OR_HIGHER
+#endif // ESP_IDF_VERSION_5_OR_HIGHER
 
 inline void analogWrite(int pin, u16 val) {
     // ESP-IDF does not provide a simple analogWrite API like Arduino
@@ -219,15 +220,18 @@ inline void setAdcRange(AdcRange range) {
 #endif
 
 // Maximum number of LEDC channels we manage
-// ESP32-C2, ESP32-C3, ESP32-C5, ESP32-C6 and ESP32-H2 have 6 channels, others have 8
-#if defined(FL_IS_ESP_32C2) || defined(FL_IS_ESP_32C3) || defined(FL_IS_ESP_32C5) || defined(FL_IS_ESP_32C6) || defined(FL_IS_ESP_32H2)
+// ESP32-C2, ESP32-C3, ESP32-C5, ESP32-C6 and ESP32-H2 have 6 channels, others
+// have 8
+#if defined(FL_IS_ESP_32C2) || defined(FL_IS_ESP_32C3) ||                      \
+    defined(FL_IS_ESP_32C5) || defined(FL_IS_ESP_32C6) ||                      \
+    defined(FL_IS_ESP_32H2)
 #define FL_LEDC_MAX_CHANNELS 6
 #else
 #define FL_LEDC_MAX_CHANNELS 8
 #endif
 
 struct LedcPinAlloc {
-    int pin;                    // -1 = free
+    int pin; // -1 = free
     ledc_channel_t channel;
     ledc_timer_t timer;
     u32 frequency_hz;
@@ -258,7 +262,7 @@ inline bool needsPwmIsrFallback(int /*pin*/, u32 frequency_hz) {
 
 inline int setPwmFrequencyNative(int pin, u32 frequency_hz) {
     if (pin < 0 || pin >= GPIO_NUM_MAX) {
-        return -1;  // Invalid pin
+        return -1; // Invalid pin
     }
 
     // Check if this pin is already allocated — reconfigure it
@@ -281,21 +285,21 @@ inline int setPwmFrequencyNative(int pin, u32 frequency_hz) {
     }
 
     if (slot < 0) {
-        return -2;  // No free LEDC channels
+        return -2; // No free LEDC channels
     }
 
-    LedcPinAlloc& alloc = g_ledc_alloc[slot];
+    LedcPinAlloc &alloc = g_ledc_alloc[slot];
 
     // Determine the best duty resolution for the requested frequency.
     // LEDC supports 1-20 bit resolution depending on the clock and frequency.
 #if ESP_IDF_VERSION_5_OR_HIGHER
     // ESP-IDF v5+ provides a helper to find the best resolution
     // For ESP32 with LEDC_AUTO_CLK, typical source clock is 80MHz APB clock
-    const u32 ledc_src_clk_hz = 80000000;  // 80MHz APB clock
+    const u32 ledc_src_clk_hz = 80000000; // 80MHz APB clock
     u32 resolution = ledc_find_suitable_duty_resolution(
         ledc_src_clk_hz, static_cast<u32>(frequency_hz));
     if (resolution == 0) {
-        return -3;  // Could not find a suitable resolution
+        return -3; // Could not find a suitable resolution
     }
 #else
     // ESP-IDF v4.x: calculate manually.
@@ -326,7 +330,7 @@ inline int setPwmFrequencyNative(int pin, u32 frequency_hz) {
 
     esp_err_t err = ledc_timer_config(&timer_cfg);
     if (err != ESP_OK) {
-        return -4;  // Timer configuration failed
+        return -4; // Timer configuration failed
     }
 
     // Configure the LEDC channel
@@ -341,7 +345,7 @@ inline int setPwmFrequencyNative(int pin, u32 frequency_hz) {
 
     err = ledc_channel_config(&ch_cfg);
     if (err != ESP_OK) {
-        return -5;  // Channel configuration failed
+        return -5; // Channel configuration failed
     }
 
     // Record the allocation
@@ -357,8 +361,8 @@ inline u32 getPwmFrequencyNative(int pin) {
             return g_ledc_alloc[i].frequency_hz;
         }
     }
-    return 0;  // Not configured
+    return 0; // Not configured
 }
 
-}  // namespace platforms
-}  // namespace fl
+} // namespace platforms
+} // namespace fl
