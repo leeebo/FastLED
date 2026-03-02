@@ -9,12 +9,12 @@
 #include <driver/i2s_std.h>
 // IWYU pragma: end_keep
 
-#include "fl/stl/assert.h"
+#include "fl/audio_input.h"
 #include "fl/int.h"
+#include "fl/stl/assert.h"
 #include "fl/stl/sstream.h"
 #include "fl/stl/vector.h"
 #include "fl/warn.h"
-#include "fl/audio_input.h"
 
 #define I2S_INTR_ALLOC_FLAGS 0
 
@@ -108,10 +108,16 @@ I2SContext make_context(const AudioConfigI2S &config) {
                 .bit_order_lsb = false,
             },
 #endif
-        .gpio_cfg = {.bclk = static_cast<gpio_num_t>(pin_clk),
+        .gpio_cfg = {.mclk = I2S_GPIO_UNUSED,
+                     .bclk = static_cast<gpio_num_t>(pin_clk),
                      .ws = static_cast<gpio_num_t>(pin_ws),
                      .dout = GPIO_NUM_NC,
-                     .din = static_cast<gpio_num_t>(pin_sd)}};
+                     .din = static_cast<gpio_num_t>(pin_sd),
+                     .invert_flags = {
+                         .mclk_inv = false,
+                         .bclk_inv = false,
+                         .ws_inv = false,
+                     }}};
 
     I2SContext out = {nullptr, std_cfg};
     return out;
